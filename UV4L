@@ -1,0 +1,72 @@
+This will get UV4L streaming server working on Raspberry Pi3
+1. Open a terminal and run the following commands:
+
+sudo rpi-update
+echo /opt/vc/lib/ | sudo tee /etc/ld.so.conf.d/vc.conf
+sudo ldconfig
+
+Enable the Legacy Camera support from the Interface Options menu of the following system command and reboot:
+
+sudo raspi-config
+sudo reboot
+
+2. Add the repositories for UV4L:
+$ curl https://www.linux-projects.org/listing/uv4l_repo/lpkey.asc | sudo apt-key add -
+$ echo "deb https://www.linux-projects.org/listing/uv4l_repo/raspbian/stretch stretch main" | sudo tee /etc/apt/sources.list.d/uv4l.list
+
+sudo apt-get update
+
+3. Install UV4L
+sudo apt-get install uv4l uv4l-raspicam
+sudo apt-get install uv4l uv4l-server uv4l-uvc uv4l-server uv4l-webrtc uv4l-xmpp-bridge
+
+4. Get your USB webcam device ID;
+lsusb and your result should look similar to:
+
+$ lsusb
+Bus 001 Device 007: ID 2001:7e3d D-Link Corp. Mobile Connect
+Bus 001 Device 004: ID 0c45:6366 Microdia Webcam Vitade AF
+
+The device ID for the webcam is 0c45:6366
+
+5. See if the device is detected by UV4L using the following command;
+uv4l --syslog-host localhost --driver uvc --device-id 0c45:6366
+
+Your output should look something like:
+
+<notice> [core] Trying to loading driver 'uvc' from built-in drivers...
+<notice> [core] Loading driver 'uvc' from external plug-in's...
+<notice> [driver] Video functionality 'Arducam USB Camera' recognized at 0c45:6366
+<notice> [core] Device detected!
+<notice> [core] Registering device node /dev/uv4l
+
+Reboot
+
+6. Goto http://ip_address:8090/ and you should see the UV4L streaming server main page. 
+If you activate the 2 way audio & video the audio WILL NOT WORK YET!
+
+7. To get audio working using the webcam microphone type the following:
+arecord -L | grep CARD
+
+The output will look something like;
+
+Output will look something like this.
+
+hw:CARD=Webcam,DEV=0
+plughw:CARD=Webcam,DEV=0
+default:CARD=Webcam
+sysdefault:CARD=Webcam
+front:CARD=Webcam,DEV=0
+dsnoop:CARD=Webcam,DEV=0
+
+Count the lines starting from zero at the top.
+In the file /etc/uv4l/uv4l-uvc.conf, find the line that has the audio device index and set the index to the line number of you microphone. In my case, it’s 2.
+
+nano /etc/uv4l/uv4l-uvc.conf
+server-option = --webrtc-recdevice-index=2 <---Remember to uncomment the line by removing the #
+
+8. Reboot
+Goto http://ip_address:8090/ and you should see the UV4L streaming server main page and when you start the stream you should hear audio as well.
+
+
+
