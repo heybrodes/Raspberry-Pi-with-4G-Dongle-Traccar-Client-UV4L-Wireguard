@@ -1,0 +1,51 @@
+To get your 4G dongle to work:
+1. Install wvdial;
+apt install wvdial
+
+2. Edit wvdial.conf with the following parameters;
+YOU WILL HAVE TO CHANGE telstra.internet WITH YOUR PROVIDER'S APN SETTINGS.
+nano /etc/wvdial.conf
+
+[Dialer defaults]
+Init = AT+CGDCONT=1,"IP","telstra.internet"  <----Change to match your provider's APN.
+Init1 = ATZ
+Init2 = ATQ0 V1 E1 S0=0 &C1 &D2 +FCLASS=0
+Stupid Mode = 1
+Modem Type = Analog Modem
+ISDN = 0
+Phone = *99#
+Modem = /dev/ttyUSB2      <----You may need to change to something else.
+Username = "Anything"
+Password = "Anything"
+Baud = 460800
+
+3. Create a script that starts wvdial;
+I called mine mobile.sh
+
+#!/bin/sh
+# 4G
+# configure raw-ip protocol
+sudo ip link set wwan0 down
+echo 'Y' | sudo tee /sys/class/net/wwan0/qmi/raw_ip
+sudo ip link set wwan0 up
+# connect to carrier
+sudo wvdial
+exit 0
+
+4. Create another script that reboots the Raspberry Pi if the connection fails;
+I called mine autoreconnect.sh
+
+#! /bin/bash
+ping -c4 1.1.1.1 > /dev/null
+if [ $? != 0 ]
+then
+sudo /sbin/shutdown -r now
+fi
+
+5. chmod 755 the two scripts above.
+
+6. crontab -e the following;
+
+crontab -e
+@reboot sleep 60 && sudo <path to>/mobile.sh >> /dev/null 2>&1
+*/2 * * * * <path to>/autoreconnect.sh >> /dev/null 2>&1
