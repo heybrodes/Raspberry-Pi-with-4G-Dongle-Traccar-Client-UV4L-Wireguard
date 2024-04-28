@@ -1,0 +1,33 @@
+1. First test to see that the USB GPS receiver is working.
+
+dmesg -T | grep tty
+
+The first couple of lines talk about the serial port built into the Pi.
+On the last line, however, a USB device is identified, which is most likely our GPS unit and
+will be accessible as /dev/ttyUSBX. We can confirm that it's a GPS by trying to read
+from it using the following command, where X should be replaced by the name
+of your device:
+
+sudo cat /dev/ttyUSBX ( or for something more prettier try: awk -F"," '/GGA/ {print $3,$5}' /dev/ttyUSBX
+
+A GPS conforming to the NMEA standard will start flooding your screen with sentences beginning with a code such as
+$GPGGA followed by comma-separated data, even if your GPS outputs binary garbage, it'll probably work fine.
+
+Press Ctrl + C to stop the feed.
+
+2. Create a script to send the GPS info to the Traccar server every 5 seconds.
+I called mine track.sh
+
+#!/bin/sh
+i=0
+
+while [ $i -lt 12 ]; do # 12 five-second intervals in 1 minute
+  curl "http://traccar-FQDN-or-IP-address:5055/?id=<RPi-ID>&lat={0}&lon={1}&timestamp={2}" <--update this line with URL and device ID
+  sleep 5
+  i=$(( i + 1 ))
+done
+
+3. In cron insert;
+
+sudo crontab -e
+* * * * * /path/to/track.sh >> /dev/null 2>&1
