@@ -49,3 +49,5 @@ fi
 crontab -e
 @reboot sleep 60 && sudo <path to>/mobile.sh >> /dev/null 2>&1
 */2 * * * * <path to>/autoreconnect.sh >> /dev/null 2>&1
+
+7. Reboot
