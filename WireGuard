@@ -1,0 +1,53 @@
+1. Install Wireguard on your Raspberry Pi;
+
+sudo apt install wireguard
+
+Log into the wireguard server endpoint and create a client file at the server end and copy 
+the client file to /etc/wireguard/wg0.conf on the Raspberry Pi.
+
+test the connection using;
+sudo wg-quick up wg0
+
+2. Make WireGuard start automatically when the Raspberry Pi starts.
+
+sudo nano /etc/systemd/system/wg-quick@.service
+
+[Unit]
+Description=WireGuard via wg-quick(8) for %I
+After=network-online.target
+Wants=network-online.target
+Documentation=man:wg-quick(8)
+Documentation=man:wg(8)
+Documentation=https://www.wireguard.com/
+Documentation=https://www.wireguard.com/quickstart/
+Documentation=https://git.zx2c4.com/wireguard-tools/about/src/man/wg-quick.8
+Documentation=https://git.zx2c4.com/wireguard-tools/about/src/man/wg.8
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/wg-quick up %I
+ExecStop=/usr/bin/wg-quick down %I
+ExecReload=/usr/bin/wg-quick strip %I
+RestartSec=3
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+Then;
+sudo systemctl enable wg-quick@wg0
+
+3. Reboot and see if the service is established
+ifconfig
+
+Should give you an output something like;
+
+wg0: flags=209<UP,POINTOPOINT,RUNNING,NOARP>  mtu 1420
+        inet 10.105.132.3  netmask 255.255.255.0  destination 10.105.132.3
+        unspec 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00  txqueuelen 1000  (UNSPEC)
+        RX packets 48778  bytes 47618372 (45.4 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 44984  bytes 5582284 (5.3 MiB)
+        TX errors 0  dropped 7 overruns 0  carrier 0  collisions 0
+
